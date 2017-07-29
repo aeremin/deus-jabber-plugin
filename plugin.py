@@ -7,6 +7,8 @@ LookParsed = namedtuple('StatusParsed', ['node', 'program', 'node_type', 'disabl
 ProgramInfoParsed = namedtuple('StatusParsed', ['program', 'effect', 'inevitable_effect', 'node_types', 'duration'])
 AttackParsed = namedtuple('StatusParsed', ['attack_program', 'defense_program', 'success'])
 
+Context = namedtuple('Context', ['current_system', 'proxy_level'])
+
 def ParseIncomingMessage(msg):
     m = re.search('Current target: (.*)\n'
                   '.*\n'
@@ -18,7 +20,7 @@ def ParseIncomingMessage(msg):
             target = None
         return StatusParsed(target, int(m.group(2)))
 
-    m = re.search('Node "(.*)" properties:\n'
+    m = re.search('Node ".*/(.*)" properties:\n'
                   'Installed program: #(\d+)\n'
                   'Type: (.*)\n',
                   msg, re.MULTILINE)
@@ -79,3 +81,4 @@ def ParseIncomingMessage(msg):
         return AttackParsed(int(m.group(3)),  int(m.group(4)), m.group(5) == 'successfull')
 
     return None
+

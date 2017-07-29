@@ -48,7 +48,7 @@ END ----------------
 '''
         parsed = plugin.ParseIncomingMessage(msg)
         self.assertIsInstance(parsed, plugin.LookParsed)
-        self.assertEqual(parsed.node, 'ManInBlack/firewall')
+        self.assertEqual(parsed.node, 'firewall')
         self.assertEqual(parsed.program, 2209900)
         self.assertEqual(parsed.node_type, 'Firewall')
         self.assertEqual(parsed.disabled_for, 440)
@@ -67,7 +67,7 @@ END ----------------
 '''
         parsed = plugin.ParseIncomingMessage(msg)
         self.assertIsInstance(parsed, plugin.LookParsed)
-        self.assertEqual(parsed.node, 'ManInBlack/VPN1')
+        self.assertEqual(parsed.node, 'VPN1')
         self.assertEqual(parsed.program, 6162975)
         self.assertEqual(parsed.node_type, 'VPN')
         self.assertIsNone(parsed.disabled_for)
@@ -89,7 +89,7 @@ END ----------------
 '''
         parsed = plugin.ParseIncomingMessage(msg)
         self.assertIsInstance(parsed, plugin.LookParsed)
-        self.assertEqual(parsed.node, 'BlackMirror944/brandmauer3')
+        self.assertEqual(parsed.node, 'brandmauer3')
         self.assertEqual(parsed.program, 2294523)
         self.assertEqual(parsed.node_type, 'Brandmauer')
         self.assertEqual(parsed.disabled_for, 591)
