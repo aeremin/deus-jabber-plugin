@@ -54,8 +54,9 @@ Child nodes:
 
 END ----------------
 '''
-        node, program, node_type, disabled_for, node_effect, childs = plugin.ParseIncomingMessage(
+        answer_type, node, program, node_type, disabled_for, node_effect, childs = plugin.ParseIncomingMessage(
             msg)
+        self.assertEqual(answer_type, plugin.AnswerType.LOOK)
         self.assertEqual(node, 'ManInBlack/firewall')
         self.assertEqual(program, 2209900)
         self.assertEqual(node_type, 'Firewall')
@@ -73,8 +74,9 @@ Type: VPN
 Node effect: trace
 END ----------------
 '''
-        node, program, node_type, disabled_for, node_effect, childs = plugin.ParseIncomingMessage(
+        answer_type, node, program, node_type, disabled_for, node_effect, childs = plugin.ParseIncomingMessage(
             msg)
+        self.assertEqual(answer_type, plugin.AnswerType.LOOK)
         self.assertEqual(node, 'ManInBlack/VPN1')
         self.assertEqual(program, 6162975)
         self.assertEqual(node_type, 'VPN')
@@ -95,8 +97,9 @@ Child nodes:
 
 END ----------------
 '''
-        node, program, node_type, disabled_for, node_effect, childs = plugin.ParseIncomingMessage(
+        answer_type, node, program, node_type, disabled_for, node_effect, childs = plugin.ParseIncomingMessage(
             msg)
+        self.assertEqual(answer_type, plugin.AnswerType.LOOK)
         self.assertEqual(node, 'BlackMirror944/brandmauer3')
         self.assertEqual(program, 2294523)
         self.assertEqual(node_type, 'Brandmauer')
@@ -105,6 +108,56 @@ END ----------------
         self.assertEqual(childs, [
                          ('cryptocore3', 'Cyptographic system', None), ('VPN4', 'VPN', 2209900)])
 
+    def testParsesDefenseProgramInfo(self):
+        msg = '''
+--------------------
+#2209900 programm info:
+Effect: trace
+Inevitable effect: logname
+Allowed node types:
+ -Firewall
+ -Antivirus
+ -VPN
+ -Brandmauer
+ -Router
+ -Traffic monitor
+ -Cyptographic system
+END ----------------
+'''
+        answer_type, program, effect, inevitable_effect, node_types, duration = plugin.ParseIncomingMessage(
+            msg)
+        self.assertEqual(answer_type, plugin.AnswerType.PROGRAM_INFO)
+        self.assertEqual(program, 2209900)
+        self.assertEqual(effect, 'trace')
+        self.assertEqual(inevitable_effect, 'logname')
+        self.assertEqual(node_types, ['Firewall', 'Antivirus', 'VPN',
+                                      'Brandmauer', 'Router', 'Traffic monitor', 'Cyptographic system'])
+        self.assertIsNone(duration)
+
+    def testParsesAttackProgramInfo(self):
+        msg = '''
+--------------------
+#1100 programm info:
+Effect: disable
+Allowed node types:
+ -Firewall
+ -Antivirus
+ -VPN
+ -Brandmauer
+ -Router
+ -Traffic monitor
+ -Cyptographic system
+Duration: 600sec.
+END ----------------
+'''
+        answer_type, program, effect, inevitable_effect, node_types, duration = plugin.ParseIncomingMessage(
+            msg)
+        self.assertEqual(answer_type, plugin.AnswerType.PROGRAM_INFO)
+        self.assertEqual(program, 1100)
+        self.assertEqual(effect, 'disable')
+        self.assertEqual(node_types, ['Firewall', 'Antivirus', 'VPN',
+                                      'Brandmauer', 'Router', 'Traffic monitor', 'Cyptographic system'])
+        self.assertEqual(duration, 600)
 
 
 if __name__ == '__main__':

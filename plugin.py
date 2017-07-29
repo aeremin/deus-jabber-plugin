@@ -49,6 +49,31 @@ def ParseIncomingMessage(msg):
                     child_program = int(mmm.group(4))
                 child_nodes.append((mmm.group(1), mmm.group(2), child_program))
 
-        return node, program, node_type, disabled_for, effect, child_nodes
+        return AnswerType.LOOK, node, program, node_type, disabled_for, effect, child_nodes
+
+    m = re.search('#(\d*) progra(m|mm) info:\n'
+                  'Effect: ([a-zA-Z0-9]*)\n',
+                  msg, re.MULTILINE)
+    if m:
+        program = int(m.group(1))
+        effect = m.group(3)
+        inevitable_effect = None
+        mm = re.search('Inevitable effect: ([a-zA-Z0-9]*)\n', msg, re.MULTILINE)
+        if mm:
+            inevitable_effect = mm.group(1)
+        node_types = []
+        mm = re.search('Allowed node types:\n(.*)', msg, re.MULTILINE and re.DOTALL)
+        if mm:
+            for line in mm.group(1).splitlines():
+                mmm = re.match(' -(.*)', line)
+                if mmm:
+                    node_types.append(mmm.group(1))
+        duration = None
+        mm = re.search('Duration: (\d*)(sec| sec)', msg, re.MULTILINE)
+        if mm:
+            duration = int(mm.group(1))
+        return AnswerType.PROGRAM_INFO, program, effect, inevitable_effect, node_types, duration
+
+
 
     return None
