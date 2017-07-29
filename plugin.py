@@ -1,14 +1,11 @@
-from enum import Enum
+from collections import namedtuple
 import re
 
 
-class AnswerType(Enum):
-    UNKNOWN = 1
-    STATUS = 2
-    LOOK = 3
-    PROGRAM_INFO = 4
-    ATTACK = 5
-
+StatusParsed = namedtuple('StatusParsed', ['target', 'proxy_level'])
+LookParsed = namedtuple('StatusParsed', ['node', 'program', 'node_type', 'disabled_for', 'node_effect', 'childs'])
+ProgramInfoParsed = namedtuple('StatusParsed', ['program', 'effect', 'inevitable_effect', 'node_types', 'duration'])
+AttackParsed = namedtuple('StatusParsed', ['attack_program', 'defense_program', 'success'])
 
 def ParseIncomingMessage(msg):
     m = re.search('Current target: (.*)\n'
@@ -19,7 +16,7 @@ def ParseIncomingMessage(msg):
         target = m.group(1)
         if target == 'not set':
             target = None
-        return AnswerType.STATUS, target, None, int(m.group(2))
+        return StatusParsed(target, int(m.group(2)))
 
     m = re.search('Node "(.*)" properties:\n'
                   'Installed program: #(\d+)\n'
@@ -49,7 +46,7 @@ def ParseIncomingMessage(msg):
                     child_program = int(mmm.group(4))
                 child_nodes.append((mmm.group(1), mmm.group(2), child_program))
 
-        return AnswerType.LOOK, node, program, node_type, disabled_for, effect, child_nodes
+        return LookParsed(node, program, node_type, disabled_for, effect, child_nodes)
 
     m = re.search('#(\d*) progra(m|mm) info:\n'
                   'Effect: ([a-zA-Z0-9]*)\n',
@@ -72,8 +69,13 @@ def ParseIncomingMessage(msg):
         mm = re.search('Duration: (\d*)(sec| sec)', msg, re.MULTILINE)
         if mm:
             duration = int(mm.group(1))
-        return AnswerType.PROGRAM_INFO, program, effect, inevitable_effect, node_types, duration
+        return ProgramInfoParsed(program, effect, inevitable_effect, node_types, duration)
 
-
+    m = re.search('(E|e)xecuting progra(m|mm) #(\d*).*\n'
+                  'Node defence: #(\d*)\n'
+                  'attack (.*)\n',
+                  msg, re.MULTILINE)
+    if m:
+        return AttackParsed(int(m.group(3)),  int(m.group(4)), m.group(5) == 'successfull')
 
     return None
