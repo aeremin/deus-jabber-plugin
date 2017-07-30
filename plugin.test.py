@@ -74,7 +74,31 @@ END ----------------
         self.assertEqual(parsed.node_effect, 'trace')
         self.assertEqual(parsed.childs, [])
 
-    def testParsesLookWithEncrypted(self):
+    def testParsesLookWithEncryptedNode(self):
+        msg = '''
+--------------------
+Node "LadyInRed5000/cryptocore1" properties:
+Installed program: *encrypted*
+Type: Cyptographic system
+Locked for: 1658 sec
+DISABLED for: 644 sec
+Child nodes:
+0: traffic_monitor1 (Traffic monitor): #3184236 DISABLED locked
+1: VPN4 (VPN): #5887791 DISABLED locked
+
+END ----------------
+'''
+        parsed = plugin.ParseIncomingMessage(msg)
+        self.assertIsInstance(parsed, plugin.LookParsed)
+        self.assertEqual(parsed.node, 'cryptocore1')
+        self.assertIsNone(parsed.program)
+        self.assertEqual(parsed.node_type, 'Cyptographic system')
+        self.assertEqual(parsed.disabled_for, 644)
+        self.assertIsNone(parsed.node_effect)
+        self.assertEqual(parsed.childs, [
+                         ('traffic_monitor1', 'Traffic monitor', 3184236), ('VPN4', 'VPN', 5887791)])
+
+    def testParsesLookWithEncryptedChild(self):
         msg = '''
 --------------------
 Node "BlackMirror944/brandmauer3" properties:
@@ -119,7 +143,7 @@ END ----------------
         self.assertEqual(parsed.effect, 'trace')
         self.assertEqual(parsed.inevitable_effect, 'logname')
         self.assertEqual(parsed.node_types, ['Firewall', 'Antivirus', 'VPN',
-                                      'Brandmauer', 'Router', 'Traffic monitor', 'Cyptographic system'])
+                                             'Brandmauer', 'Router', 'Traffic monitor', 'Cyptographic system'])
         self.assertIsNone(parsed.duration)
 
     def testParsesAttackProgramInfo(self):
@@ -143,7 +167,29 @@ END ----------------
         self.assertEqual(parsed.program, 1100)
         self.assertEqual(parsed.effect, 'disable')
         self.assertEqual(parsed.node_types, ['Firewall', 'Antivirus', 'VPN',
-                                      'Brandmauer', 'Router', 'Traffic monitor', 'Cyptographic system'])
+                                             'Brandmauer', 'Router', 'Traffic monitor', 'Cyptographic system'])
+        self.assertEqual(parsed.duration, 600)
+
+    def testParsesGetDataProgramInfo(self):
+        msg = '''
+--------------------
+#450 programm info:
+Effect: get_data
+Allowed node types:
+ -Data
+ -Bank account
+ -Finance
+ -Administrative interface
+ -Corporate HQ
+Duration: 600sec.
+END ----------------
+'''
+        parsed = plugin.ParseIncomingMessage(msg)
+        self.assertIsInstance(parsed, plugin.ProgramInfoParsed)
+        self.assertEqual(parsed.program, 450)
+        self.assertEqual(parsed.effect, 'get_data')
+        self.assertEqual(parsed.node_types, ['Data', 'Bank account', 'Finance',
+                                             'Administrative interface', 'Corporate HQ'])
         self.assertEqual(parsed.duration, 600)
 
     def testParsesFailedAttack(self):
@@ -174,6 +220,51 @@ Node 'antivirus1' disabled for 600 seconds.
         self.assertEqual(parsed.defense_program, 249444)
         self.assertTrue(parsed.success)
 
+    def testParsesSuccessfulAttackInevitableEffect(self):
+        msg = '''
+executing program #175 from willy220 target:ManInBlack
+Node defence: #1189475
+Inevitable effect triggered
+Logname:
+ManInBlack security log updated
+attack successfull
+Node 'antivirus4' disabled for 600 seconds.
+'''
+        parsed = plugin.ParseIncomingMessage(msg)
+        self.assertIsInstance(parsed, plugin.AttackParsed)
+        self.assertEqual(parsed.attack_program, 175)
+        self.assertEqual(parsed.defense_program, 1189475)
+        self.assertTrue(parsed.success)
+
+    def testParsesSuccessfulAttackInevitableEffectOfNode(self):
+        msg = '''
+executing program #847 from willy220 target:LadyInRed351
+Trace:
+Proxy level decreased by 1.
+LadyInRed351 security log updated
+Node defence: #8247239
+attack successfull
+'''
+        parsed = plugin.ParseIncomingMessage(msg)
+        self.assertIsInstance(parsed, plugin.AttackParsed)
+        self.assertEqual(parsed.attack_program, 847)
+        self.assertEqual(parsed.defense_program, 8247239)
+        self.assertTrue(parsed.success)
+
+    def testDontCareAboutOk(self):
+        msg = 'ok'
+        parsed = plugin.ParseIncomingMessage(msg)
+        self.assertIsInstance(parsed, plugin.DonCareParsed)
+
+    def testDontCareAboutNotAvailable(self):
+        msg = '''
+--------------------
+BlackMirror944/antivirus not available
+
+END ----------------
+'''
+        parsed = plugin.ParseIncomingMessage(msg)
+        self.assertIsInstance(parsed, plugin.DonCareParsed)
 
 
 if __name__ == '__main__':
