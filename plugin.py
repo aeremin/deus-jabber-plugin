@@ -2,6 +2,7 @@ from collections import namedtuple
 import re
 import networkx as nx
 import networkx.drawing.nx_pydot as nx_pydot
+from subprocess import call
 
 StatusParsed = namedtuple('StatusParsed', ['target', 'proxy_level'])
 LookParsed = namedtuple('StatusParsed', [
@@ -10,7 +11,7 @@ ProgramInfoParsed = namedtuple('StatusParsed', [
                                'program', 'effect', 'inevitable_effect', 'node_types', 'duration'])
 AttackParsed = namedtuple(
     'StatusParsed', ['attack_program', 'defense_program', 'success'])
-DonCareParsed = namedtuple('DonCareParsed', [])
+DontCareParsed = namedtuple('DontCareParsed', [])
 
 
 def ParseIncomingMessage(msg):
@@ -97,7 +98,7 @@ def ParseIncomingMessage(msg):
         re.search('not available(| )\n', msg, re.MULTILINE) or
         re.search('Error 406: node disabled', msg, re.MULTILINE) or
         re.search('network scan started: ', msg, re.MULTILINE)):
-        return DonCareParsed()
+        return DontCareParsed()
 
     return None
 
@@ -106,6 +107,12 @@ Context = namedtuple('Context', ['current_system', 'proxy_level'])
 last_command = ''
 context = Context(None, None)
 G = nx.DiGraph()
+#G.graph['graph'] = {'rankdir': 'LR'}
+
+def MakeNodePropertiesDict(name, program):
+    if not program: program = '???'
+    label = name + '\n' + str(program)
+    return {'label': label}
 
 def prof_pre_chat_message_display(barejid, resource, message):
     global last_command
@@ -124,17 +131,16 @@ def prof_pre_chat_message_display(barejid, resource, message):
     if isinstance(parsed, LookParsed):
         if context.current_system != 'BlackMirror944':
             return
-        if not G.has_node(parsed.node):
-            G.add_node(parsed.node)
+        G.add_node(parsed.node, MakeNodePropertiesDict(parsed.node, parsed.program))
         for child in parsed.childs:
             child_node = child[0]
-            if not G.has_node(child_node):
-                G.add_node(child_node)
+            child_program = child[2]
+            G.add_node(child_node, MakeNodePropertiesDict(child_node, child_program))
             G.add_edge(parsed.node, child_node)
         if not parsed.childs and parsed.disabled_for:
             G.add_edge(parsed.node, parsed.node)
 
-    if isinstance(parsed, DonCareParsed):
+    if isinstance(parsed, DontCareParsed):
         return
 
     if not parsed:
@@ -150,3 +156,4 @@ def prof_pre_chat_message_send(barejid, message):
 
 def PrintDot():
     nx_pydot.write_dot(G, 'fe.dot')
+    call(['dot', 'fe.dot', '-Tpdf:cairo', '-ofe.pdf'])

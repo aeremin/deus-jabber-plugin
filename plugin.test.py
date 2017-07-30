@@ -254,7 +254,7 @@ attack successfull
     def testDontCareAboutOk(self):
         msg = 'ok'
         parsed = plugin.ParseIncomingMessage(msg)
-        self.assertIsInstance(parsed, plugin.DonCareParsed)
+        self.assertIsInstance(parsed, plugin.DontCareParsed)
 
     def testDontCareAboutNotAvailable(self):
         msg = '''
@@ -264,7 +264,7 @@ BlackMirror944/antivirus not available
 END ----------------
 '''
         parsed = plugin.ParseIncomingMessage(msg)
-        self.assertIsInstance(parsed, plugin.DonCareParsed)
+        self.assertIsInstance(parsed, plugin.DontCareParsed)
 
 
 if __name__ == '__main__':
