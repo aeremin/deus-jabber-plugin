@@ -109,14 +109,6 @@ class PerSystemProcessor:
     def __init__(self):
         self.graph = nx.DiGraph()
 
-    def UpdateNodeLabel(self, name, node):
-        if 'program' not in node.keys():
-            program_str = '???'
-        else:
-            program_str = str(node['program'])
-        label = name + '\n' + str(program_str)
-        node['label'] = label
-
     def OnNodeInfo(self, node_info):
         self.AddOrUpdateNode(node_info)
         for child in node_info.childs:
@@ -128,14 +120,25 @@ class PerSystemProcessor:
     def AddOrUpdateNode(self, node_info):
         if not self.graph.has_node(node_info.node):
             self.graph.add_node(node_info.node)
-        if node_info.program:
-            self.graph.node[node_info.node]['program'] = node_info.program
-        self.UpdateNodeLabel(node_info.node, self.graph.node[node_info.node])
+        self.MaybeSaveNodeProgram(node_info.node, node_info.program)
 
     def OnAttackParsed(self, attack_parsed, target):
-        self.graph.node[target]['program'] = attack_parsed.defense_program
-        self.UpdateNodeLabel(target, self.graph.node[target])
+        self.MaybeSaveNodeProgram(target, attack_parsed.defense_program)
 
+    def MaybeSaveNodeProgram(self, node_name, program):
+        if not program: return
+        node = self.graph.node[node_name]
+        node['program'] = program
+        self.UpdateNodeLabel(node_name, node)
+
+    def UpdateNodeLabel(self, name, node):
+        if 'program' not in node.keys():
+            program_str = '???'
+        else:
+            program_str = str(node['program'])
+        label = name + '\n' + str(program_str)
+        node['label'] = label
+    
     def PrintToPdf(self, name):
         dot_file_name = 'output/%s.dot' % name
         pdf_file_name = 'output/%s.pdf' % name
