@@ -1,6 +1,7 @@
 from collections import namedtuple
 import re
-
+import networkx as nx
+import networkx.drawing.nx_pydot as nx_pydot
 
 StatusParsed = namedtuple('StatusParsed', ['target', 'proxy_level'])
 LookParsed = namedtuple('StatusParsed', [
@@ -102,21 +103,36 @@ def ParseIncomingMessage(msg):
 
 
 Context = namedtuple('Context', ['current_system', 'proxy_level'])
-
-Context = namedtuple('Context', ['current_system', 'proxy_level'])
+last_command = ''
 context = Context(None, None)
-
-last_command = None
-
+G = nx.DiGraph()
 
 def prof_pre_chat_message_display(barejid, resource, message):
+    global last_command
+    global G
+    global context
+
+    if message == 'ok':
+        m = re.search('target ([a-zA-Z0-9_]*)', last_command, re.MULTILINE)
+        context = Context(current_system=m.group(1), proxy_level=9000)
+
     parsed = ParseIncomingMessage(message)
     if isinstance(parsed, StatusParsed):
         context = Context(current_system=parsed.target,
                           proxy_level=parsed.proxy_level)
 
     if isinstance(parsed, LookParsed):
-        pass
+        if context.current_system != 'BlackMirror944':
+            return
+        if not G.has_node(parsed.node):
+            G.add_node(parsed.node)
+        for child in parsed.childs:
+            child_node = child[0]
+            if not G.has_node(child_node):
+                G.add_node(child_node)
+            G.add_edge(parsed.node, child_node)
+        if not parsed.childs and parsed.disabled_for:
+            G.add_edge(parsed.node, parsed.node)
 
     if isinstance(parsed, DonCareParsed):
         return
@@ -128,5 +144,9 @@ def prof_pre_chat_message_display(barejid, resource, message):
 
 
 def prof_pre_chat_message_send(barejid, message):
+    global last_command
     last_command = message
     return None
+
+def PrintDot():
+    nx_pydot.write_dot(G, 'fe.dot')

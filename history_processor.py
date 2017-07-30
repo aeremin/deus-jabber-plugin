@@ -11,3 +11,4 @@ with open('example.history', encoding='utf-8') as f:
         else:
             plugin.prof_pre_chat_message_send('', msg)
 
+plugin.PrintDot()
