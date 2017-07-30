@@ -47,7 +47,7 @@ Child nodes:
 END ----------------
 '''
         parsed = plugin.ParseIncomingMessage(msg)
-        self.assertIsInstance(parsed, plugin.LookParsed)
+        self.assertIsInstance(parsed, plugin.NodeInfo)
         self.assertEqual(parsed.node, 'firewall')
         self.assertEqual(parsed.program, 2209900)
         self.assertEqual(parsed.node_type, 'Firewall')
@@ -66,7 +66,7 @@ Node effect: trace
 END ----------------
 '''
         parsed = plugin.ParseIncomingMessage(msg)
-        self.assertIsInstance(parsed, plugin.LookParsed)
+        self.assertIsInstance(parsed, plugin.NodeInfo)
         self.assertEqual(parsed.node, 'VPN1')
         self.assertEqual(parsed.program, 6162975)
         self.assertEqual(parsed.node_type, 'VPN')
@@ -89,7 +89,7 @@ Child nodes:
 END ----------------
 '''
         parsed = plugin.ParseIncomingMessage(msg)
-        self.assertIsInstance(parsed, plugin.LookParsed)
+        self.assertIsInstance(parsed, plugin.NodeInfo)
         self.assertEqual(parsed.node, 'cryptocore1')
         self.assertIsNone(parsed.program)
         self.assertEqual(parsed.node_type, 'Cyptographic system')
@@ -112,7 +112,7 @@ Child nodes:
 END ----------------
 '''
         parsed = plugin.ParseIncomingMessage(msg)
-        self.assertIsInstance(parsed, plugin.LookParsed)
+        self.assertIsInstance(parsed, plugin.NodeInfo)
         self.assertEqual(parsed.node, 'brandmauer3')
         self.assertEqual(parsed.program, 2294523)
         self.assertEqual(parsed.node_type, 'Brandmauer')

@@ -5,8 +5,8 @@ import networkx.drawing.nx_pydot as nx_pydot
 from subprocess import call
 
 StatusParsed = namedtuple('StatusParsed', ['target', 'proxy_level'])
-LookParsed = namedtuple('StatusParsed', [
-                        'node', 'program', 'node_type', 'disabled_for', 'node_effect', 'childs'])
+NodeInfo = namedtuple('StatusParsed', [
+                      'node', 'program', 'node_type', 'disabled_for', 'node_effect', 'childs'])
 ProgramInfoParsed = namedtuple('StatusParsed', [
                                'program', 'effect', 'inevitable_effect', 'node_types', 'duration'])
 AttackParsed = namedtuple(
@@ -55,9 +55,11 @@ def ParseIncomingMessage(msg):
                 child_program = None
                 if mmm.group(4):
                     child_program = int(mmm.group(4))
-                child_nodes.append((mmm.group(1), mmm.group(2), child_program))
+                child_nodes.append(NodeInfo(node=mmm.group(1), 
+                    node_type=mmm.group(2), program=child_program,
+                    disabled_for=None, node_effect=None, childs=None))
 
-        return LookParsed(node, program, node_type, disabled_for, effect, child_nodes)
+        return NodeInfo(node, program, node_type, disabled_for, effect, child_nodes)
 
     m = re.search('#(\d*) progra(m|mm) info:\n'
                   'Effect: ([a-zA-Z0-9_]*)\n',
@@ -97,7 +99,7 @@ def ParseIncomingMessage(msg):
         re.search('Info about .* effect:', msg, re.MULTILINE) or
         re.search('not available(| )\n', msg, re.MULTILINE) or
         re.search('Error 406: node disabled', msg, re.MULTILINE) or
-        re.search('network scan started: ', msg, re.MULTILINE)):
+            re.search('network scan started: ', msg, re.MULTILINE)):
         return DontCareParsed()
 
     return None
@@ -109,10 +111,22 @@ context = Context(None, None)
 G = nx.DiGraph()
 #G.graph['graph'] = {'rankdir': 'LR'}
 
-def MakeNodePropertiesDict(name, program):
-    if not program: program = '???'
-    label = name + '\n' + str(program)
-    return {'label': label}
+def UpdateNodeLabel(name, node):
+    if 'program' not in node.keys():
+        program_str = '???'
+    else:
+        program_str = str(node['program'])
+    label = name + '\n' + str(program_str)
+    node['label'] = label
+
+def AddOrUpdateNode(node_info):
+    global G
+    if not G.has_node(node_info.node):
+        G.add_node(node_info.node)
+    if node_info.program:
+        G.node[node_info.node]['program'] = node_info.program
+    UpdateNodeLabel(node_info.node, G.node[node_info.node])
+
 
 def prof_pre_chat_message_display(barejid, resource, message):
     global last_command
@@ -128,15 +142,13 @@ def prof_pre_chat_message_display(barejid, resource, message):
         context = Context(current_system=parsed.target,
                           proxy_level=parsed.proxy_level)
 
-    if isinstance(parsed, LookParsed):
+    if isinstance(parsed, NodeInfo):
         if context.current_system != 'BlackMirror944':
             return
-        G.add_node(parsed.node, MakeNodePropertiesDict(parsed.node, parsed.program))
+        AddOrUpdateNode(parsed)
         for child in parsed.childs:
-            child_node = child[0]
-            child_program = child[2]
-            G.add_node(child_node, MakeNodePropertiesDict(child_node, child_program))
-            G.add_edge(parsed.node, child_node)
+            AddOrUpdateNode(child)
+            G.add_edge(parsed.node, child.node)
         if not parsed.childs and parsed.disabled_for:
             G.add_edge(parsed.node, parsed.node)
 
@@ -153,6 +165,7 @@ def prof_pre_chat_message_send(barejid, message):
     global last_command
     last_command = message
     return None
+
 
 def PrintDot():
     nx_pydot.write_dot(G, 'fe.dot')
