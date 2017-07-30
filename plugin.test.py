@@ -51,13 +51,16 @@ END ----------------
         self.assertEqual(parsed.node, 'firewall')
         self.assertEqual(parsed.program, 2209900)
         self.assertEqual(parsed.node_type, 'Firewall')
-        self.assertEqual(parsed.disabled_for, 440)
+        self.assertTrue(parsed.disabled)
         self.assertIsNone(parsed.node_effect)
         self.assertEqual(parsed.childs, [
-                         ('antivirus1', 'Antivirus', 1811628), ('antivirus2', 'Antivirus', 16530052)])
+                         plugin.MakeChildNodeInfo('antivirus1',
+                                         1811628, 'Antivirus', False),
+                         plugin.MakeChildNodeInfo('antivirus2',
+                                         16530052, 'Antivirus', True)])
 
     def testParsesLookWithNodeEffect(self):
-        msg = '''
+        msg='''
 --------------------
 Node "ManInBlack/VPN1" properties:
 Installed program: #6162975
@@ -70,7 +73,7 @@ END ----------------
         self.assertEqual(parsed.node, 'VPN1')
         self.assertEqual(parsed.program, 6162975)
         self.assertEqual(parsed.node_type, 'VPN')
-        self.assertIsNone(parsed.disabled_for)
+        self.assertFalse(parsed.disabled)
         self.assertEqual(parsed.node_effect, 'trace')
         self.assertEqual(parsed.childs, [])
 
@@ -93,10 +96,12 @@ END ----------------
         self.assertEqual(parsed.node, 'cryptocore1')
         self.assertIsNone(parsed.program)
         self.assertEqual(parsed.node_type, 'Cyptographic system')
-        self.assertEqual(parsed.disabled_for, 644)
+        self.assertTrue(parsed.disabled)
         self.assertIsNone(parsed.node_effect)
         self.assertEqual(parsed.childs, [
-                         ('traffic_monitor1', 'Traffic monitor', 3184236), ('VPN4', 'VPN', 5887791)])
+                         plugin.MakeChildNodeInfo('traffic_monitor1',
+                                         3184236, 'Traffic monitor', True),
+                         plugin.MakeChildNodeInfo('VPN4', 5887791, 'VPN', True)])
 
     def testParsesLookWithEncryptedChild(self):
         msg = '''
@@ -116,10 +121,12 @@ END ----------------
         self.assertEqual(parsed.node, 'brandmauer3')
         self.assertEqual(parsed.program, 2294523)
         self.assertEqual(parsed.node_type, 'Brandmauer')
-        self.assertEqual(parsed.disabled_for, 591)
+        self.assertTrue(parsed.disabled)
         self.assertIsNone(parsed.node_effect)
         self.assertEqual(parsed.childs, [
-                         ('cryptocore3', 'Cyptographic system', None), ('VPN4', 'VPN', 2209900)])
+                         plugin.MakeChildNodeInfo('cryptocore3',
+                                         None, 'Cyptographic system', False),
+                         plugin.MakeChildNodeInfo('VPN4', 2209900, 'VPN', False)])
 
     def testParsesDefenseProgramInfo(self):
         msg = '''

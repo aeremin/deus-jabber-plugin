@@ -6,13 +6,15 @@ from subprocess import call
 
 StatusParsed = namedtuple('StatusParsed', ['target', 'proxy_level'])
 NodeInfo = namedtuple('NodeInfo', [
-                      'node', 'program', 'node_type', 'disabled_for', 'node_effect', 'childs'])
+                      'node', 'program', 'node_type', 'disabled', 'node_effect', 'childs'])
 ProgramInfoParsed = namedtuple('StatusParsed', [
                                'program', 'effect', 'inevitable_effect', 'node_types', 'duration'])
 AttackParsed = namedtuple(
     'StatusParsed', ['attack_program', 'defense_program', 'success'])
 DontCareParsed = namedtuple('DontCareParsed', [])
 
+def MakeChildNodeInfo(node, program, node_type, disabled):
+    return NodeInfo(node, program, node_type, disabled, None, None)
 
 def ParseIncomingMessage(msg):
     m = re.search('Current target: (.*)\n'
@@ -40,10 +42,7 @@ def ParseIncomingMessage(msg):
         if mm:
             effect = mm.group(1)
 
-        disabled_for = None
-        mm = re.search('DISABLED for: (\d*) sec\n', msg, re.MULTILINE)
-        if mm:
-            disabled_for = int(mm.group(1))
+        disabled = re.search('DISABLED', msg, re.MULTILINE) is not None
 
         child_nodes = []
         mm = re.search('Child nodes:\n(.*)\n\n', msg,
@@ -55,11 +54,11 @@ def ParseIncomingMessage(msg):
                 child_program = None
                 if mmm.group(4):
                     child_program = int(mmm.group(4))
-                child_nodes.append(NodeInfo(node=mmm.group(1),
-                                            node_type=mmm.group(2), program=child_program,
-                                            disabled_for=None, node_effect=None, childs=None))
+                disabled_child = 'DISABLED' in line
+                child_nodes.append(MakeChildNodeInfo(mmm.group(1), child_program,
+                                            mmm.group(2), disabled_child))
 
-        return NodeInfo(node, program, node_type, disabled_for, effect, child_nodes)
+        return NodeInfo(node, program, node_type, disabled, effect, child_nodes)
 
     m = re.search('#(\d*) progra(m|mm) info:\n'
                   'Effect: ([a-zA-Z0-9_]*)\n',
