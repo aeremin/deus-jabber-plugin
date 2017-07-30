@@ -132,6 +132,10 @@ class PerSystemProcessor:
             self.graph.node[node_info.node]['program'] = node_info.program
         self.UpdateNodeLabel(node_info.node, self.graph.node[node_info.node])
 
+    def OnAttackParsed(self, attack_parsed, target):
+        self.graph.node[target]['program'] = attack_parsed.defense_program
+        self.UpdateNodeLabel(target, self.graph.node[target])
+
     def PrintToPdf(self, name):
         dot_file_name = 'output/%s.dot' % name
         pdf_file_name = 'output/%s.pdf' % name
@@ -143,6 +147,7 @@ last_command = ''
 proxy_level = None
 current_system = None
 processors = dict()
+
 
 def GetCurrentProcessor():
     global processors
@@ -172,6 +177,11 @@ def prof_pre_chat_message_display(barejid, resource, message):
 
     if isinstance(parsed, NodeInfo):
         GetCurrentProcessor().OnNodeInfo(parsed)
+
+    if isinstance(parsed, AttackParsed):
+        m = re.search('#\d+ ([a-zA-Z0-9_]+)', last_command, re.MULTILINE)
+        GetCurrentProcessor().OnAttackParsed(
+            parsed, m.group(1))
 
     if isinstance(parsed, DontCareParsed):
         return
