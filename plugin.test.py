@@ -52,7 +52,7 @@ END ----------------
         self.assertEqual(parsed.program, 2209900)
         self.assertEqual(parsed.node_type, 'Firewall')
         self.assertTrue(parsed.disabled)
-        self.assertIsNone(parsed.node_effect)
+        self.assertEqual(parsed.node_effect, 'NoOp')
         self.assertEqual(parsed.childs, [
                          plugin.MakeChildNodeInfo('antivirus1',
                                          1811628, 'Antivirus', False),
@@ -97,7 +97,7 @@ END ----------------
         self.assertIsNone(parsed.program)
         self.assertEqual(parsed.node_type, 'Cyptographic system')
         self.assertTrue(parsed.disabled)
-        self.assertIsNone(parsed.node_effect)
+        self.assertEqual(parsed.node_effect, 'NoOp')
         self.assertEqual(parsed.childs, [
                          plugin.MakeChildNodeInfo('traffic_monitor1',
                                          3184236, 'Traffic monitor', True),
@@ -122,7 +122,7 @@ END ----------------
         self.assertEqual(parsed.program, 2294523)
         self.assertEqual(parsed.node_type, 'Brandmauer')
         self.assertTrue(parsed.disabled)
-        self.assertIsNone(parsed.node_effect)
+        self.assertEqual(parsed.node_effect, 'NoOp')
         self.assertEqual(parsed.childs, [
                          plugin.MakeChildNodeInfo('cryptocore3',
                                          None, 'Cyptographic system', False),

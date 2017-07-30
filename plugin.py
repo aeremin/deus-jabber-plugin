@@ -37,7 +37,7 @@ def ParseIncomingMessage(msg):
         if m.group(3):
             program = int(m.group(3))
         node_type = m.group(4)
-        effect = None
+        effect = 'NoOp'
         mm = re.search('Node effect: (.*)\n', msg, re.MULTILINE)
         if mm:
             effect = mm.group(1)
@@ -113,13 +113,17 @@ class PerSystemProcessor:
         for child in node_info.childs:
             self.AddOrUpdateNode(child)
             self.graph.add_edge(node_info.node, child.node)
-        if not node_info.childs and node_info.disabled_for:
-            self.graph.add_edge(node_info.node, node_info.node)
 
     def AddOrUpdateNode(self, node_info):
         if not self.graph.has_node(node_info.node):
             self.graph.add_node(node_info.node)
+        node = self.graph.node[node_info.node]
         self.MaybeSaveNodeProgram(node_info.node, node_info.program)
+        if node_info.childs == [] and node_info.disabled:
+            node['leaf'] = True
+        node['disabled'] = node_info.disabled
+        if node_info.node_effect:
+            node['effect'] = node_info.node_effect
 
     def OnAttackParsed(self, attack_parsed, target):
         self.MaybeSaveNodeProgram(target, attack_parsed.defense_program)
@@ -128,7 +132,6 @@ class PerSystemProcessor:
         if not program: return
         node = self.graph.node[node_name]
         node['program'] = program
-        self.UpdateNodeLabel(node_name, node)
 
     def UpdateNodeLabel(self, name, node):
         if 'program' not in node.keys():
@@ -139,6 +142,16 @@ class PerSystemProcessor:
         node['label'] = label
     
     def PrintToPdf(self, name):
+        for node_name, node in self.graph.node.items():
+            self.UpdateNodeLabel(node_name, node)
+            styles = ''
+            if node.get('leaf', False): styles += 'diagonals,'
+            if node.get('disabled', False): styles += 'dotted,'
+            effect = node.get('effect', 'NoOp')
+            if not effect == 'NoOp': styles += 'bold,'
+            if styles: styles = styles[:-1]
+            node['style'] = '"' + styles + '"'
+
         dot_file_name = 'output/%s.dot' % name
         pdf_file_name = 'output/%s.pdf' % name
         nx_pydot.write_dot(self.graph, dot_file_name)
