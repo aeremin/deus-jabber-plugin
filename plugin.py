@@ -5,7 +5,7 @@ import networkx.drawing.nx_pydot as nx_pydot
 from subprocess import call
 
 StatusParsed = namedtuple('StatusParsed', ['target', 'proxy_level'])
-NodeInfo = namedtuple('StatusParsed', [
+NodeInfo = namedtuple('NodeInfo', [
                       'node', 'program', 'node_type', 'disabled_for', 'node_effect', 'childs'])
 ProgramInfoParsed = namedtuple('StatusParsed', [
                                'program', 'effect', 'inevitable_effect', 'node_types', 'duration'])
@@ -55,9 +55,9 @@ def ParseIncomingMessage(msg):
                 child_program = None
                 if mmm.group(4):
                     child_program = int(mmm.group(4))
-                child_nodes.append(NodeInfo(node=mmm.group(1), 
-                    node_type=mmm.group(2), program=child_program,
-                    disabled_for=None, node_effect=None, childs=None))
+                child_nodes.append(NodeInfo(node=mmm.group(1),
+                                            node_type=mmm.group(2), program=child_program,
+                                            disabled_for=None, node_effect=None, childs=None))
 
         return NodeInfo(node, program, node_type, disabled_for, effect, child_nodes)
 
@@ -105,52 +105,73 @@ def ParseIncomingMessage(msg):
     return None
 
 
-Context = namedtuple('Context', ['current_system', 'proxy_level'])
+class PerSystemProcessor:
+    def __init__(self):
+        self.graph = nx.DiGraph()
+
+    def UpdateNodeLabel(self, name, node):
+        if 'program' not in node.keys():
+            program_str = '???'
+        else:
+            program_str = str(node['program'])
+        label = name + '\n' + str(program_str)
+        node['label'] = label
+
+    def OnNodeInfo(self, node_info):
+        self.AddOrUpdateNode(node_info)
+        for child in node_info.childs:
+            self.AddOrUpdateNode(child)
+            self.graph.add_edge(node_info.node, child.node)
+        if not node_info.childs and node_info.disabled_for:
+            self.graph.add_edge(node_info.node, node_info.node)
+
+    def AddOrUpdateNode(self, node_info):
+        if not self.graph.has_node(node_info.node):
+            self.graph.add_node(node_info.node)
+        if node_info.program:
+            self.graph.node[node_info.node]['program'] = node_info.program
+        self.UpdateNodeLabel(node_info.node, self.graph.node[node_info.node])
+
+    def PrintToPdf(self, name):
+        dot_file_name = 'output/%s.dot' % name
+        pdf_file_name = 'output/%s.pdf' % name
+        nx_pydot.write_dot(self.graph, dot_file_name)
+        call(['dot', dot_file_name, '-Tpdf:cairo', '-o%s' % pdf_file_name])
+
+
 last_command = ''
-context = Context(None, None)
-G = nx.DiGraph()
-#G.graph['graph'] = {'rankdir': 'LR'}
+proxy_level = None
+current_system = None
+processors = dict()
 
-def UpdateNodeLabel(name, node):
-    if 'program' not in node.keys():
-        program_str = '???'
-    else:
-        program_str = str(node['program'])
-    label = name + '\n' + str(program_str)
-    node['label'] = label
-
-def AddOrUpdateNode(node_info):
-    global G
-    if not G.has_node(node_info.node):
-        G.add_node(node_info.node)
-    if node_info.program:
-        G.node[node_info.node]['program'] = node_info.program
-    UpdateNodeLabel(node_info.node, G.node[node_info.node])
+def GetCurrentProcessor():
+    global processors
+    global current_system
+    if not current_system:
+        return None
+    if not current_system in processors.keys():
+        # TODO: Support loading from file
+        processors[current_system] = PerSystemProcessor()
+    return processors[current_system]
 
 
 def prof_pre_chat_message_display(barejid, resource, message):
     global last_command
-    global G
-    global context
+    global proxy_level
+    global current_system
+    global processors
 
     if message == 'ok':
         m = re.search('target ([a-zA-Z0-9_]*)', last_command, re.MULTILINE)
-        context = Context(current_system=m.group(1), proxy_level=9000)
+        current_system = m.group(1)
 
     parsed = ParseIncomingMessage(message)
     if isinstance(parsed, StatusParsed):
-        context = Context(current_system=parsed.target,
-                          proxy_level=parsed.proxy_level)
+        current_system = parsed.target
+        proxy_level = parsed.proxy_level
 
     if isinstance(parsed, NodeInfo):
-        if context.current_system != 'BlackMirror944':
-            return
-        AddOrUpdateNode(parsed)
-        for child in parsed.childs:
-            AddOrUpdateNode(child)
-            G.add_edge(parsed.node, child.node)
-        if not parsed.childs and parsed.disabled_for:
-            G.add_edge(parsed.node, parsed.node)
+        GetCurrentProcessor().OnNodeInfo(parsed)
 
     if isinstance(parsed, DontCareParsed):
         return
@@ -168,5 +189,6 @@ def prof_pre_chat_message_send(barejid, message):
 
 
 def PrintDot():
-    nx_pydot.write_dot(G, 'fe.dot')
-    call(['dot', 'fe.dot', '-Tpdf:cairo', '-ofe.pdf'])
+    global processors
+    for name, processor in processors.items():
+        processor.PrintToPdf(name)
