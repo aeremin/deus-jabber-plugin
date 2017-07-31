@@ -13,8 +13,10 @@ AttackParsed = namedtuple(
     'StatusParsed', ['attack_program', 'defense_program', 'success'])
 DontCareParsed = namedtuple('DontCareParsed', [])
 
+
 def MakeChildNodeInfo(node, program, node_type, disabled):
     return NodeInfo(node, program, node_type, disabled, None, None)
+
 
 def ParseIncomingMessage(msg):
     m = re.search('Current target: (.*)\n'
@@ -56,7 +58,7 @@ def ParseIncomingMessage(msg):
                     child_program = int(mmm.group(4))
                 disabled_child = 'DISABLED' in line
                 child_nodes.append(MakeChildNodeInfo(mmm.group(1), child_program,
-                                            mmm.group(2), disabled_child))
+                                                     mmm.group(2), disabled_child))
 
         return NodeInfo(node, program, node_type, disabled, effect, child_nodes)
 
@@ -129,7 +131,8 @@ class PerSystemProcessor:
         self.MaybeSaveNodeProgram(target, attack_parsed.defense_program)
 
     def MaybeSaveNodeProgram(self, node_name, program):
-        if not program: return
+        if not program:
+            return
         node = self.graph.node[node_name]
         node['program'] = program
 
@@ -140,19 +143,23 @@ class PerSystemProcessor:
             program_str = str(node['program'])
         label = name + '\n' + str(program_str)
         node['label'] = label
-    
+
     def PrintToPdf(self, name):
         for node_name, node in self.graph.node.items():
             self.UpdateNodeLabel(node_name, node)
             styles = ''
-            if node.get('leaf', False): styles += 'diagonals,'
-            if node.get('disabled', False): styles += 'dotted,'
+            if node.get('leaf', False):
+                styles += 'diagonals,'
+            if node.get('disabled', False):
+                styles += 'dotted,'
             effect = node.get('effect', 'NoOp')
-            if not effect == 'NoOp': styles += 'bold,'
-            if styles: styles = styles[:-1]
+            if not effect == 'NoOp':
+                styles += 'bold,'
+            if styles:
+                styles = styles[:-1]
             node['style'] = '"' + styles + '"'
 
-        dot_file_name = 'output/%s.dot' % name
+        dot_file_name = 'output/dot/%s.dot' % name
         pdf_file_name = 'output/%s.pdf' % name
         nx_pydot.write_dot(self.graph, dot_file_name)
         call(['dot', dot_file_name, '-Tpdf:cairo', '-o%s' % pdf_file_name])
@@ -175,7 +182,13 @@ def GetCurrentProcessor():
     return processors[current_system]
 
 
+import prof
+
+
 def prof_pre_chat_message_display(barejid, resource, message):
+    prof.log_info('prof_pre_chat_message_display')
+    prof.log_info("barejid: %s\nmessage: %s" % (barejid, message))
+
     global last_command
     global proxy_level
     global current_system
@@ -199,18 +212,22 @@ def prof_pre_chat_message_display(barejid, resource, message):
             parsed, m.group(1))
 
     if isinstance(parsed, DontCareParsed):
-        return
+        return message
 
     if not parsed:
-        print('<---')
-        print(message)
-        print('--->')
+        prof.log_warning('Not able to parse message:')
+        prof.log_warning(message)
+        prof.log_warning('(EOM)')
+
+    return message
 
 
 def prof_pre_chat_message_send(barejid, message):
+    prof.log_info('prof_pre_chat_message_send')
+    prof.log_info("barejid: %s\nmessage: %s" % (barejid, message))
     global last_command
     last_command = message
-    return None
+    return message
 
 
 def PrintDot():

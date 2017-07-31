@@ -1,4 +1,7 @@
 import unittest
+import unittest.mock as mock
+import sys
+sys.modules['prof'] = mock.MagicMock()
 import plugin
 
 

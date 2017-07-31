@@ -1,5 +1,9 @@
-import plugin
 import re
+import unittest.mock as mock
+import sys
+sys.modules['prof'] = mock.MagicMock()
+
+import plugin
 
 with open('example.history', encoding='utf-8') as f:
     for line in f:
