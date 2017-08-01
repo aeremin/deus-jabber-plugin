@@ -201,9 +201,8 @@ def prof_init(version, status, account_name, fulljid):
         system_name = os.path.basename(os.path.splitext(g)[0])
         processors[system_name] = PerSystemProcessor(nx.DiGraph(nx_pydot.read_dot(g)))
 
-        
 
-def prof_pre_chat_message_display(barejid, resource, message):
+def prof_pre_chat_message_display_no_print(barejid, resource, message):
     if not IsCyberSpaceBot(barejid): return message
     prof.log_info('prof_pre_chat_message_display')
     prof.log_info("barejid: %s\nmessage: %s" % (barejid, message))
@@ -237,9 +236,13 @@ def prof_pre_chat_message_display(barejid, resource, message):
         prof.log_warning('Not able to parse message:')
         prof.log_warning(message)
         prof.log_warning('(EOM)')
-
+        return message
     return message
 
+def prof_pre_chat_message_display(barejid, resource, message):
+    res = prof_pre_chat_message_display_no_print(barejid, resource, message)
+    if current_system:
+        GetCurrentProcessor().PrintToPdf(current_system)
 
 def prof_pre_chat_message_send(barejid, message):
     if not IsCyberSpaceBot(barejid): return message
@@ -250,7 +253,7 @@ def prof_pre_chat_message_send(barejid, message):
     return message
 
 
-def PrintDot():
+def PrintAllPdfs():
     global processors
     for name, processor in processors.items():
         processor.PrintToPdf(name)
