@@ -11,8 +11,8 @@ with open('example.history', encoding='utf-8') as f:
         from_or_to = m.group(1)
         msg = m.group(2).replace('\\n', '\n')
         if (from_or_to == 'from'):
-            plugin.prof_pre_chat_message_display('', '', msg)
+            plugin.prof_pre_chat_message_display('darknet@cyberspace', '', msg)
         else:
-            plugin.prof_pre_chat_message_send('', msg)
+            plugin.prof_pre_chat_message_send('darknet@cyberspace', msg)
 
 plugin.PrintDot()

@@ -276,6 +276,10 @@ END ----------------
         parsed = plugin.ParseIncomingMessage(msg)
         self.assertIsInstance(parsed, plugin.DontCareParsed)
 
+    def testIsCyberSpaceBot(self):
+        self.assertTrue(plugin.IsCyberSpaceBot('raven@jabber.alice.digital'))
+        self.assertTrue(plugin.IsCyberSpaceBot('darknet@cyberspace'))
+        self.assertFalse(plugin.IsCyberSpaceBot('vasya@cyberspace'))
 
 if __name__ == '__main__':
     unittest.main()

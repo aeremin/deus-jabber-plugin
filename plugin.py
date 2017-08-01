@@ -14,6 +14,11 @@ AttackParsed = namedtuple(
 DontCareParsed = namedtuple('DontCareParsed', [])
 
 
+def IsCyberSpaceBot(jid):
+    return jid == 'darknet@cyberspace' or jid == 'raven@jabber.alice.digital'
+
+
+
 def MakeChildNodeInfo(node, program, node_type, disabled):
     return NodeInfo(node, program, node_type, disabled, None, None)
 
@@ -186,6 +191,7 @@ import prof
 
 
 def prof_pre_chat_message_display(barejid, resource, message):
+    if not IsCyberSpaceBot(barejid): return message
     prof.log_info('prof_pre_chat_message_display')
     prof.log_info("barejid: %s\nmessage: %s" % (barejid, message))
 
@@ -223,6 +229,7 @@ def prof_pre_chat_message_display(barejid, resource, message):
 
 
 def prof_pre_chat_message_send(barejid, message):
+    if not IsCyberSpaceBot(barejid): return message
     prof.log_info('prof_pre_chat_message_send')
     prof.log_info("barejid: %s\nmessage: %s" % (barejid, message))
     global last_command
