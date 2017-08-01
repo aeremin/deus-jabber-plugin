@@ -11,18 +11,16 @@ import glob
 StatusParsed = namedtuple('StatusParsed', ['target', 'proxy_level'])
 NodeInfo = namedtuple('NodeInfo', [
                       'node', 'program', 'node_type', 'disabled', 'node_effect', 'childs'])
-ProgramInfoParsed = namedtuple('StatusParsed', [
+ProgramInfoParsed = namedtuple('ProgramInfoParsed', [
                                'program', 'effect', 'inevitable_effect', 'node_types', 'duration'])
 AttackParsed = namedtuple(
-    'StatusParsed', ['attack_program', 'defense_program', 'success'])
+    'AttackParsed', ['attack_program', 'defense_program', 'success'])
 DontCareParsed = namedtuple('DontCareParsed', [])
 
 OUTPUT_LOCATION = '/home/aeremin/Dev/deus-jabber-plugin/output/'
 
 def IsCyberSpaceBot(jid):
     return jid == 'darknet@cyberspace' or jid == 'raven@jabber.alice.digital'
-
-
 
 def MakeChildNodeInfo(node, program, node_type, disabled):
     return NodeInfo(node, program, node_type, disabled, None, None)
