@@ -6,6 +6,7 @@ import networkx.drawing.nx_pydot as nx_pydot
 from subprocess import call
 import prof
 import glob
+import json
 
 
 StatusParsed = namedtuple('StatusParsed', ['target', 'proxy_level'])
@@ -181,7 +182,7 @@ last_command = ''
 proxy_level = None
 current_system = None
 processors = dict()
-
+known_programs = dict()
 
 def GetCurrentProcessor():
     global processors
@@ -194,10 +195,19 @@ def GetCurrentProcessor():
 
 
 def prof_init(version, status, account_name, fulljid):
+    global processors
+    global known_programs
     saved_graphs = glob.glob(OUTPUT_LOCATION + 'dot/*.dot')
+    processors = dict()
     for g in saved_graphs:
         system_name = os.path.basename(os.path.splitext(g)[0])
         processors[system_name] = PerSystemProcessor(nx.DiGraph(nx_pydot.read_dot(g)))
+    known_programs = dict()
+    if os.path.isfile(OUTPUT_LOCATION + 'programs.json'):
+        with open(OUTPUT_LOCATION + 'programs.json') as f:
+            tmp = json.load(f)
+            for k, v in tmp.items():
+                known_programs[k] = ProgramInfoParsed(v[0], v[1], v[2], v[3], v[4])
 
 
 def prof_pre_chat_message_display_no_print(barejid, resource, message):
@@ -209,6 +219,7 @@ def prof_pre_chat_message_display_no_print(barejid, resource, message):
     global proxy_level
     global current_system
     global processors
+    global known_programs
 
     if message == 'ok':
         m = re.search('target ([a-zA-Z0-9_]*)', last_command, re.MULTILINE)
@@ -226,6 +237,11 @@ def prof_pre_chat_message_display_no_print(barejid, resource, message):
         m = re.search('#\d+ ([a-zA-Z0-9_]+)', last_command, re.MULTILINE)
         GetCurrentProcessor().OnAttackParsed(
             parsed, m.group(1))
+
+    if isinstance(parsed, ProgramInfoParsed):
+        known_programs[parsed.program] = parsed
+        with open(OUTPUT_LOCATION + 'programs.json', 'w') as f:
+            json.dump(known_programs, f, indent=2)
 
     if isinstance(parsed, DontCareParsed):
         return message
