@@ -1,5 +1,6 @@
 from collections import namedtuple
 import re
+import os
 import networkx as nx
 import networkx.drawing.nx_pydot as nx_pydot
 from subprocess import call
@@ -116,9 +117,13 @@ def ParseIncomingMessage(msg):
 
 
 class PerSystemProcessor:
-    def __init__(self):
-        self.graph = nx.DiGraph()
-
+    def __init__(self, graph=None):
+        self.graph = graph or nx.DiGraph()
+        for _, node in self.graph.node.items():
+            node['disabled'] = node.get('disabled', '') == 'True'
+            p = node.get('program', None)
+            if p: node['program'] = int(p)
+        
     def OnNodeInfo(self, node_info):
         self.AddOrUpdateNode(node_info)
         for child in node_info.childs:
@@ -186,13 +191,17 @@ def GetCurrentProcessor():
     if not current_system:
         return None
     if not current_system in processors.keys():
-        # TODO: Support loading from file
         processors[current_system] = PerSystemProcessor()
     return processors[current_system]
 
 
 def prof_init(version, status, account_name, fulljid):
-    print(glob.glob(OUTPUT_LOCATION + 'dot/*.dot'))
+    saved_graphs = glob.glob(OUTPUT_LOCATION + 'dot/*.dot')
+    for g in saved_graphs:
+        system_name = os.path.basename(os.path.splitext(g)[0])
+        processors[system_name] = PerSystemProcessor(nx.DiGraph(nx_pydot.read_dot(g)))
+
+        
 
 def prof_pre_chat_message_display(barejid, resource, message):
     if not IsCyberSpaceBot(barejid): return message

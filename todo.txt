@@ -1,4 +1,3 @@
-# Load graphs on application start
 # Save state on any change
 # Support programs library
 # Support passive mapping
