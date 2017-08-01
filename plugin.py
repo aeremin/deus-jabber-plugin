@@ -3,6 +3,9 @@ import re
 import networkx as nx
 import networkx.drawing.nx_pydot as nx_pydot
 from subprocess import call
+import prof
+import glob
+
 
 StatusParsed = namedtuple('StatusParsed', ['target', 'proxy_level'])
 NodeInfo = namedtuple('NodeInfo', [
@@ -13,6 +16,7 @@ AttackParsed = namedtuple(
     'StatusParsed', ['attack_program', 'defense_program', 'success'])
 DontCareParsed = namedtuple('DontCareParsed', [])
 
+OUTPUT_LOCATION = '/home/aeremin/Dev/deus-jabber-plugin/output/'
 
 def IsCyberSpaceBot(jid):
     return jid == 'darknet@cyberspace' or jid == 'raven@jabber.alice.digital'
@@ -164,8 +168,8 @@ class PerSystemProcessor:
                 styles = styles[:-1]
             node['style'] = '"' + styles + '"'
 
-        dot_file_name = 'output/dot/%s.dot' % name
-        pdf_file_name = 'output/%s.pdf' % name
+        dot_file_name = '%sdot/%s.dot' % (OUTPUT_LOCATION, name)
+        pdf_file_name = '%s%s.pdf' % (OUTPUT_LOCATION, name)
         nx_pydot.write_dot(self.graph, dot_file_name)
         call(['dot', dot_file_name, '-Tpdf:cairo', '-o%s' % pdf_file_name])
 
@@ -187,8 +191,8 @@ def GetCurrentProcessor():
     return processors[current_system]
 
 
-import prof
-
+def prof_init(version, status, account_name, fulljid):
+    print(glob.glob(OUTPUT_LOCATION + 'dot/*.dot'))
 
 def prof_pre_chat_message_display(barejid, resource, message):
     if not IsCyberSpaceBot(barejid): return message

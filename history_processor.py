@@ -16,3 +16,4 @@ with open('example.history', encoding='utf-8') as f:
             plugin.prof_pre_chat_message_send('darknet@cyberspace', msg)
 
 plugin.PrintDot()
+plugin.prof_init(None, None, None, None)
