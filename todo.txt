@@ -1,5 +1,3 @@
-# Support display of programs for attack given node
 # Support program query by defense code (for cryptocores)
-# Embed "last known defense program" to encrypted node output
 # Support passive mapping
 # Support /autoattack command

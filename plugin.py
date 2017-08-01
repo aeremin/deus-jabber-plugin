@@ -26,6 +26,11 @@ def IsCyberSpaceBot(jid):
 def MakeChildNodeInfo(node, program, node_type, disabled):
     return NodeInfo(node, program, node_type, disabled, None, None)
 
+# TODO: Change to actual rule
+def TheRule(attack_program, defense_program):
+    return (defense_program is not None and
+        (defense_program % int(attack_program)) == 0)
+
 
 def ParseIncomingMessage(msg):
     m = re.search('Current target: (.*)\n'
@@ -193,6 +198,14 @@ def GetCurrentProcessor():
         processors[current_system] = PerSystemProcessor()
     return processors[current_system]
 
+def MakeHackTooltip(defense_program, defense_type):
+    global known_programs
+    winning_attacks = []
+    for k, p in known_programs.items():
+        if (TheRule(k, defense_program) and 
+            (defense_type in p.node_types)):
+            winning_attacks.append('%d:%s' % (k, p.effect))
+    return '(' + ', '.join(winning_attacks) + ')'
 
 def prof_init(version, status, account_name, fulljid):
     global processors
@@ -207,7 +220,7 @@ def prof_init(version, status, account_name, fulljid):
         with open(OUTPUT_LOCATION + 'programs.json') as f:
             tmp = json.load(f)
             for k, v in tmp.items():
-                known_programs[k] = ProgramInfoParsed(v[0], v[1], v[2], v[3], v[4])
+                known_programs[int(k)] = ProgramInfoParsed(v[0], v[1], v[2], v[3], v[4])
 
 
 def prof_pre_chat_message_display_no_print(barejid, resource, message):
@@ -232,6 +245,11 @@ def prof_pre_chat_message_display_no_print(barejid, resource, message):
 
     if isinstance(parsed, NodeInfo):
         GetCurrentProcessor().OnNodeInfo(parsed)
+        last_know_program = GetCurrentProcessor().graph.node[parsed.node].get('program', None)
+        if not parsed.program and last_know_program:
+            message = message + '\nLast known defense program: %d' % last_know_program
+        message = (message + '\nFollowing attacks are available:\n' + 
+            MakeHackTooltip(last_know_program, parsed.node_type))
 
     if isinstance(parsed, AttackParsed):
         m = re.search('#\d+ ([a-zA-Z0-9_]+)', last_command, re.MULTILINE)

@@ -5,7 +5,7 @@ sys.modules['prof'] = mock.MagicMock()
 
 import plugin
 
-# plugin.prof_init(None, None, None, None)
+plugin.prof_init(None, None, None, None)
 
 if True: 
     with open('example.history', encoding='utf-8') as f:
